@@ -354,19 +354,17 @@ func (t *DBClient) buildWhere() {
 
 func (t *DBClient) buildData() {
 	dType := reflect.TypeOf(t.Info.data)
-	dKind := dType.Kind()
 	dValue := reflect.ValueOf(t.Info.data)
 
-	if dKind == reflect.Ptr {
+	if dType.Kind() == reflect.Ptr {
 		dValue = dValue.Elem()
-		dType = reflect.TypeOf(dValue)
-		dKind = dType.Kind()
+		dType = dValue.Type()
 	}
 
 	var columnData []string
 	var qm []string
 
-	switch dKind {
+	switch dType.Kind() {
 	case reflect.Map:
 		for key, val := range t.Info.data.(map[string]interface{}) {
 			if t.Info.sType == INSERT {
