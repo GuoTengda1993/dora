@@ -183,7 +183,7 @@ func (t *DBClient) All(result interface{}) ([]map[string]interface{}, error) {
 		return nil, fmt.Errorf("formatSql error: %s", err.Error())
 	}
 
-	rows, err := t.DB.Query(t.Info.sql, t.Info.args)
+	rows, err := t.DB.Query(t.Info.sql, t.Info.args...)
 	if err != nil {
 		return nil, err
 	}
@@ -261,8 +261,6 @@ func (t *DBClient) Do() (int64, error) {
 	}
 	var num int64
 
-	fmt.Println(t.Info.sql)
-	fmt.Printf("=== %+v", t.Info.args)
 	if t.Tx != nil {
 		res, err := t.Tx.Exec(t.Info.sql, t.Info.args...)
 		if err != nil {
@@ -304,17 +302,17 @@ func (t *DBClient) formatSQL() error {
 				cols = "DISTINCT " + cols
 			}
 		}
-		t.Info.sql += fmt.Sprintf("SELECT %s FROM %s", cols, t.Info.table)
+		t.Info.sql += fmt.Sprintf("SELECT %s FROM `%s`", cols, t.Info.table)
 		t.buildWhere()
 	case UPDATE:
-		t.Info.sql += fmt.Sprintf("UPDATE %s SET", t.Info.table)
+		t.Info.sql += fmt.Sprintf("UPDATE `%s` SET", t.Info.table)
 		t.buildData()
 		t.buildWhere()
 	case INSERT:
 		t.Info.sql += fmt.Sprintf("INSERT INTO `%s`", t.Info.table)
 		t.buildData()
 	case DELETE:
-		t.Info.sql += fmt.Sprintf("DELETE FROM %s", t.Info.table)
+		t.Info.sql += fmt.Sprintf("DELETE FROM `%s`", t.Info.table)
 		t.buildWhere()
 	}
 	return nil
@@ -364,7 +362,6 @@ func (t *DBClient) buildData() {
 		dType = reflect.TypeOf(dValue)
 		dKind = dType.Kind()
 	}
-	dNum := dType.NumField()
 
 	var columnData []string
 	var qm []string
@@ -381,7 +378,7 @@ func (t *DBClient) buildData() {
 			t.Info.args = append(t.Info.args, val)
 		}
 	case reflect.Struct:
-		for i := 0; i < dNum; i++ {
+		for i := 0; i < dType.NumField(); i++ {
 			field := dType.Field(i)
 			key := field.Tag.Get("db")
 			if key == "" {
@@ -413,7 +410,6 @@ func (t *DBClient) buildData() {
 			default:
 				t.Info.args = append(t.Info.args, val.String())
 			}
-			t.Info.args = append(t.Info.args, val)
 		}
 	default:
 		panic("data not map or struct")
