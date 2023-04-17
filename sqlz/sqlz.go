@@ -303,23 +303,34 @@ func (t *DBClient) formatSQL() error {
 }
 
 func (t *DBClient) buildWhere() {
-	if len(t.Info.where) == 0 {
-		return
-	}
-	var list []string
-	for k, v := range t.Info.where {
-		ktmp := strings.Fields(k)
-		mark := "="
-		if len(ktmp) == 2 {
-			mark = ktmp[1]
+	// WHERE
+	if len(t.Info.where) > 0 {
+		var list []string
+		for k, v := range t.Info.where {
+			ktmp := strings.Fields(k)
+			mark := "="
+			if len(ktmp) == 2 {
+				mark = ktmp[1]
+			}
+			if strings.ToUpper(mark) == "IN" {
+				inVal := v.([]interface{})
+				if len(inVal) == 0 {
+					continue
+				}
+				qs := strings.Repeat("?,", len(inVal))
+				qs = qs[0: len(qs)-1]
+				tmp := fmt.Sprintf("`%s` IN (%s)", ktmp[0], qs)
+				t.Info.args = append(t.Info.args, inVal...)
+			} else {
+				tmp := fmt.Sprintf("`%s` %s ?", ktmp[0], mark)
+				list = append(list, tmp)
+				t.Info.args = append(t.Info.args, v)
+			}
 		}
-		tmp := fmt.Sprintf("`%s` %s ?", ktmp[0], mark)
-		list = append(list, tmp)
-		t.Info.args = append(t.Info.args, v)
+		where := strings.Join(list, ",")
+		t.Info.sql += fmt.Sprintf(" WHERE %s", where)
 	}
-	where := strings.Join(list, ",")
-	t.Info.sql += fmt.Sprintf(" WHERE %s", where)
-
+	// ORDER BY
 	if len(t.Info.orderBy) > 0 {
 		tmp := []string{}
 		for k, v := range t.Info.orderBy {
@@ -334,6 +345,7 @@ func (t *DBClient) buildWhere() {
 		oStr := strings.Join(tmp, ",")
 		t.Info.sql += fmt.Sprintf(" ORDER BY %s", oStr)
 	}
+	// LIMIT
 	if t.Info.limit > 0 {
 		t.Info.sql += fmt.Sprintf(" LIMIT %d", t.Info.limit)
 		if t.Info.offset > 0 {
