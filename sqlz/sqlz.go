@@ -19,11 +19,6 @@ const (
 	DELETE = 4
 )
 
-const (
-	ASC  = 1
-	DESC = -1
-)
-
 type DBClient struct {
 	DB           *sql.DB
 	Info         *Info
@@ -41,8 +36,7 @@ type Info struct {
 	columns   []string
 	limit     uint64
 	offset    uint64
-	orderBy   string
-	orderMark int
+	orderBy   map[string]bool
 	distinct  bool
 }
 
@@ -157,18 +151,8 @@ func (t *DBClient) Offset(offset uint64) *DBClient {
 	return t
 }
 
-func (t *DBClient) OrderBy(col string) *DBClient {
-	t.Info.orderBy = col
-	return t
-}
-
-func (t *DBClient) ASC() *DBClient {
-	t.Info.orderMark = ASC
-	return t
-}
-
-func (t *DBClient) DESC() *DBClient {
-	t.Info.orderMark = DESC
+func (t *DBClient) OrderBy(col string, asc bool) *DBClient {
+	t.Info.orderBy[col] = asc
 	return t
 }
 
@@ -336,12 +320,19 @@ func (t *DBClient) buildWhere() {
 	where := strings.Join(list, ",")
 	t.Info.sql += fmt.Sprintf(" WHERE %s", where)
 
-	if t.Info.orderBy != "" {
-		mark := "ASC"
-		if t.Info.orderMark == DESC {
-			mark = "DESC"
+	if len(t.Info.orderBy) > 0 {
+		tmp := []string{}
+		for k, v := range t.Info.orderBy {
+			var m string
+			if v {
+				m = "ASC"
+			} else {
+				m = "DESC"
+			}
+			tmp = append(tmp, fmt.Sprintf("`%s` %s", k, m))
 		}
-		t.Info.sql += fmt.Sprintf(" ORDER BY `%s` %s", t.Info.orderBy, mark)
+		oStr := strings.Join(tmp, ",")
+		t.Info.sql += fmt.Sprintf(" ORDER BY %s", oStr)
 	}
 	if t.Info.limit > 0 {
 		t.Info.sql += fmt.Sprintf(" LIMIT %d", t.Info.limit)
