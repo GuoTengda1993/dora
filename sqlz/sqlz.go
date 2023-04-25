@@ -58,7 +58,8 @@ func NewDB(driverName, username, password, host, dbName, charset string) (*DBCli
 		defer d.Close()
 		return nil, err
 	}
-	info := &Info{}
+	orderBy := make(map[string]bool)
+	info := &Info{orderBy: orderBy}
 	return &DBClient{DB: d, Info: info}, nil
 }
 
@@ -70,7 +71,8 @@ func (t *DBClient) SetConnAndTime(maxOpenConns, maxIdleConns int, maxLifeTime, m
 }
 
 func (t *DBClient) clear() {
-	info := &Info{}
+	orderBy := make(map[string]bool)
+	info := &Info{orderBy: orderBy}
 	t.Info = info
 }
 
