@@ -63,6 +63,12 @@ func NewDB(driverName, username, password, host, dbName, charset string) (*DBCli
 	return &DBClient{DB: d, Info: info}, nil
 }
 
+func NewDbByConn(db *sql.DB) (*DBClient) {
+	orderBy := make(map[string]bool)
+	info := &Info{orderBy: orderBy}
+	return &DBClient{DB: db, Info: info}
+}
+
 func (t *DBClient) SetConnAndTime(maxOpenConns, maxIdleConns int, maxLifeTime, maxIdleTime time.Duration) {
 	t.DB.SetMaxOpenConns(maxOpenConns)
 	t.DB.SetMaxIdleConns(maxIdleConns)
