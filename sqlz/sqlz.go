@@ -336,7 +336,7 @@ func (t *DBClient) buildWhere() {
 				t.Info.args = append(t.Info.args, v)
 			}
 		}
-		where := strings.Join(list, ",")
+		where := strings.Join(list, " AND ")
 		t.Info.sql += fmt.Sprintf(" WHERE %s", where)
 	}
 	// ORDER BY
