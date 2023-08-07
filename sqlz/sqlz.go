@@ -328,6 +328,7 @@ func (t *DBClient) buildWhere() {
 				qs := strings.Repeat("?,", len(inVal))
 				qs = qs[0: len(qs)-1]
 				tmp := fmt.Sprintf("`%s` IN (%s)", ktmp[0], qs)
+				list = append(list, tmp)
 				t.Info.args = append(t.Info.args, inVal...)
 			} else {
 				tmp := fmt.Sprintf("`%s` %s ?", ktmp[0], mark)
