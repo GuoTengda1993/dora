@@ -13,10 +13,11 @@ import (
 )
 
 const (
-	SELECT = 1
-	UPDATE = 2
-	INSERT = 3
-	DELETE = 4
+	DEFAULT = 0
+	SELECT  = 1
+	UPDATE  = 2
+	INSERT  = 3
+	DELETE  = 4
 )
 
 type DBClient struct {
@@ -109,6 +110,20 @@ func (t *DBClient) Close() {
 	}
 }
 
+func (t *DBClient) RawQuery(sql string, args ...any) *DBClientV2 {
+	t.Info.sType = SELECT
+	t.Info.sql = sql
+	t.Info.args = append(t.Info.args, args...)
+	return t
+}
+
+func (t *DBClient) RawExec(sql string, args ...any) *DBClientV2 {
+	t.Info.sType = DEFAULT
+	t.Info.sql = sql
+	t.Info.args = append(t.Info.args, args...)
+	return t
+}
+
 func (t *DBClient) Table(table string) *DBClient {
 	t.Info.table = table
 	return t
@@ -170,9 +185,11 @@ func (t *DBClient) All(result interface{}) ([]map[string]interface{}, error) {
 		return nil, errors.New("not select sqlz")
 	}
 	var err error
-	err = t.formatSQL()
-	if err != nil {
-		return nil, fmt.Errorf("formatSql error: %s", err.Error())
+	if len(t.Info.sql) == 0 {
+		err = t.formatSQL()
+		if err != nil {
+			return nil, fmt.Errorf("formatSql error: %s", err.Error())
+		}
 	}
 
 	rows, err := t.DB.Query(t.Info.sql, t.Info.args...)
@@ -247,10 +264,13 @@ func (t *DBClient) Do() (int64, error) {
 	if t.Info.sType == SELECT {
 		return 0, errors.New("should not select sqlz")
 	}
-	err := t.formatSQL()
-	if err != nil {
-		return 0, fmt.Errorf("formatSql error: %s", err.Error())
+	if len(t.Info.sql) == 0 {
+		err := t.formatSQL()
+		if err != nil {
+			return 0, fmt.Errorf("formatSql error: %s", err.Error())
+		}	
 	}
+
 	var num int64
 
 	if t.Tx != nil {
