@@ -185,11 +185,9 @@ func (t *DBClient) All(result interface{}) ([]map[string]interface{}, error) {
 		return nil, errors.New("not select sqlz")
 	}
 	var err error
-	if len(t.Info.sql) == 0 {
-		err = t.formatSQL()
-		if err != nil {
-			return nil, fmt.Errorf("formatSql error: %s", err.Error())
-		}
+	err = t.formatSQL()
+	if err != nil {
+		return nil, fmt.Errorf("formatSql error: %s", err.Error())
 	}
 
 	rows, err := t.DB.Query(t.Info.sql, t.Info.args...)
@@ -264,11 +262,9 @@ func (t *DBClient) Do() (int64, error) {
 	if t.Info.sType == SELECT {
 		return 0, errors.New("should not select sqlz")
 	}
-	if len(t.Info.sql) == 0 {
-		err := t.formatSQL()
-		if err != nil {
-			return 0, fmt.Errorf("formatSql error: %s", err.Error())
-		}	
+	err := t.formatSQL()
+	if err != nil {
+		return 0, fmt.Errorf("formatSql error: %s", err.Error())
 	}
 
 	var num int64
@@ -295,6 +291,9 @@ func (t *DBClient) Do() (int64, error) {
 }
 
 func (t *DBClient) formatSQL() error {
+	if len(t.Info.sql) > 0 {
+		return nil
+	}
 	if t.Info.table == "" {
 		return errors.New("table name empty")
 	}
@@ -381,7 +380,6 @@ func (t *DBClient) buildWhere() {
 			t.Info.sql += fmt.Sprintf(" OFFSET %d", t.Info.offset)
 		}
 	}
-	return
 }
 
 func (t *DBClient) buildData() {
@@ -451,5 +449,4 @@ func (t *DBClient) buildData() {
 	} else {
 		t.Info.sql += fmt.Sprintf(" %s", columnStr)
 	}
-	return
 }
