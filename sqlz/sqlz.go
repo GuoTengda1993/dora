@@ -10,6 +10,7 @@ import (
 
 	jsoniter "github.com/json-iterator/go"
 	"github.com/json-iterator/go/extra"
+	"github.com/GuoTengda1993/dora/utils"
 )
 
 const (
@@ -340,7 +341,7 @@ func (t *DBClient) buildWhere() {
 				mark = ktmp[1]
 			}
 			if strings.ToUpper(mark) == "IN" {
-				inVal := v.([]interface{})
+				inVal := utils.ToAnySlice(v)
 				if len(inVal) == 0 {
 					continue
 				}
