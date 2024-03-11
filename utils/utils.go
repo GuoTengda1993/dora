@@ -8,7 +8,7 @@ import (
 // no matter of the type of input ([]uint64/string)
 func ToAnySlice(slice any) []any {
     s := reflect.ValueOf(slice)
-    if s.Kind() := reflect.Slice {
+    if s.Kind() != reflect.Slice {
       panic("Given a non-slice type")
     }
     if s.IsNil(){
